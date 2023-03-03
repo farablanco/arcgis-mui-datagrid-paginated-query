@@ -1,23 +1,28 @@
 import * as query from "@arcgis/core/rest/query";
+import Snackbar from "@mui/material/Snackbar";
 import { DataGrid, GridColumns } from "@mui/x-data-grid";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(100);
-  const [data, setData] = useState<{
-    rows: any[];
-    columns: GridColumns;
-    exceededTransferLimit: boolean;
-  }>({ rows: [], columns: [], exceededTransferLimit: false });
-  const [start, setStart] = useState(0);
 
-  const { isFetching } = useQuery(
-    ["test", start],
-    async () => {
-      const response = await query.executeQueryPBF(
+  const [start, setStart] = useState(0);
+  const [rows, setRows] = useState<any[]>([]);
+  const [columns, setColumns] = useState<GridColumns>([]);
+  const [exceededTransferLimit, setExceededTransferLimit] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [snackbarMsg, setSnackbarMsg] = useState("");
+  const snackbarOpen = snackbarMsg !== "";
+
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    query
+      .executeQueryPBF(
         "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Counties_education_smart_mapping/FeatureServer/0",
         {
           where: "1=1",
@@ -25,46 +30,41 @@ function App() {
           start: start,
           num: 2000,
         }
-      );
-      const rows = response.features.map((feature) => ({
-        id: feature.attributes.OBJECTID,
-        ...feature.attributes,
-      }));
-      const columns = response.fields.map((field) => ({
-        field: field.name,
-        headerName: field.alias,
-        width: 150,
-      }));
-      console.log({
-        length: response.features.length,
-        exceededTransferLimit: response.exceededTransferLimit,
+      )
+      .then((response) => {
+        const fetchedRows = response.features.map((feature) => ({
+          id: feature.attributes.OBJECTID,
+          ...feature.attributes,
+        }));
+        const newRows = [...rows, ...fetchedRows];
+        setRows(newRows);
+        const columns = response.fields.map((field) => ({
+          field: field.name,
+          headerName: field.alias,
+          width: 150,
+        }));
+        setColumns(columns);
+        setExceededTransferLimit(response.exceededTransferLimit);
+        if (response.exceededTransferLimit) {
+          setSnackbarMsg(
+            "More data available. Go to the last page to fetch more data."
+          );
+        }
+      })
+      .catch((err) => {
+        const newError = new Error(err.message);
+        setError(newError);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-      return {
-        rows,
-        columns,
-        exceededTransferLimit: response.exceededTransferLimit,
-      };
-    },
-    {
-      onSuccess: (newData) => {
-        const newRows = [...data.rows, ...newData.rows];
-        setData({
-          rows: newRows,
-          columns: newData.columns,
-          exceededTransferLimit: newData.exceededTransferLimit,
-        });
-      },
-    }
-  );
+  }, [start]);
 
   const handlePageChange = (newPage: number) => {
     // Detect last page
-    if (
-      data.exceededTransferLimit &&
-      newPage + 1 === data.rows.length / pageSize
-    ) {
-      console.log("fetching more data");
-      setStart(start + data.rows.length);
+    if (exceededTransferLimit && newPage + 1 === rows.length / pageSize) {
+      setSnackbarMsg("Fetching more data...");
+      setStart(start + rows.length);
     }
     setPage(newPage);
   };
@@ -73,16 +73,27 @@ function App() {
     setPageSize(newPageSize);
   };
 
+  const handleSnackbarClose = () => {
+    setSnackbarMsg("");
+  };
+
   return (
     <div className="App">
+      <Snackbar
+        open={snackbarOpen}
+        onClose={handleSnackbarClose}
+        autoHideDuration={3000}
+        message={snackbarMsg}
+      />
       <DataGrid
-        rows={data.rows}
-        columns={data.columns}
+        rows={rows}
+        columns={columns}
         page={page}
         onPageChange={handlePageChange}
         pageSize={pageSize}
         onPageSizeChange={handlePageSizeChange}
-        loading={isFetching}
+        loading={isLoading}
+        error={error}
       />
     </div>
   );
