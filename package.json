@@ -1,0 +1,42 @@
+{
+  "name": "vite-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@arcgis/core": "^4.26.5",
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@fontsource/roboto": "^4.5.7",
+    "@mui/icons-material": "^5.8.4",
+    "@mui/lab": "^5.0.0-alpha.93",
+    "@mui/material": "^5.9.2",
+    "@mui/x-data-grid": "^5.17.25",
+    "@tanstack/react-query": "^4.10.3",
+    "danfojs": "1.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.1.2"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^7.0.0-beta.12",
+    "@storybook/addon-interactions": "^7.0.0-beta.12",
+    "@storybook/addon-links": "^7.0.0-beta.12",
+    "@storybook/react": "^7.0.0-beta.12",
+    "@storybook/react-vite": "^7.0.0-beta.12",
+    "@storybook/testing-library": "^0.0.14-next.1",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react-swc": "^3.0.1",
+    "storybook": "^7.0.0-beta.12",
+    "typescript": "^4.6.4",
+    "vite": "^4.0.1"
+  }
+}
