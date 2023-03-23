@@ -37,10 +37,10 @@ function App() {
         const newError = new Error(err.message);
         setError(newError);
       });
-  }, []); // assumes that row count does not change frequently; modify according to needs
+  }, []); // assumes that total row count does not change frequently; modify according to needs
 
   useEffect(() => {
-    setIsLoading(true);
+    // setIsLoading(true);
     setError(null);
     query
       .executeQueryPBF(
@@ -66,27 +66,60 @@ function App() {
         }));
         setColumns(columns);
         setExceededTransferLimit(response.exceededTransferLimit);
-        if (response.exceededTransferLimit) {
-          setSnackbarMsg(
-            "More data available. Go to the last page to fetch more data."
-          );
-        }
+        // if (response.exceededTransferLimit) {
+        //   setSnackbarMsg(
+        //     "More data available. Go to the last page to fetch more data."
+        //   );
+        // }
       })
       .catch((err) => {
         const newError = new Error(err.message);
         setError(newError);
       })
       .finally(() => {
+        // Enable the next page button
+        if (rows.length !== rowCount) {
+          const nextPageButton = document.querySelector(
+            '[aria-label="Go to next page"]'
+          ) as HTMLButtonElement;
+          nextPageButton.classList.remove("Mui-disabled");
+        }
         setIsLoading(false);
       });
   }, [start]);
 
   const handlePageChange = (newPage: number) => {
     // Detect last page
-    if (exceededTransferLimit && newPage + 1 === rows.length / pageSize) {
-      setSnackbarMsg("Fetching more data...");
-      setStart(start + rows.length);
+    // if (exceededTransferLimit && newPage + 1 === rows.length / pageSize) {
+    //   setSnackbarMsg("Fetching more data...");
+    //   setStart(start + rows.length);
+    // }
+
+    // using number of records instead of pages because the right page number is dependent on page size
+
+    // fetchThreshold represents undisplayed number of rows left which, when reached, triggers a fetch of new set of rows
+    const fetchThreshold = 300;
+
+    // Check if the threshold has been reached, and if it has, trigger a fetch
+    // [pageSize * newPage] - the number of rows that have been displayed thus far
+    // [rows.length] - the current total number of rows fetched from the service
+    if (rows.length - pageSize * newPage < fetchThreshold) {
+      setStart(rows.length);
     }
+
+    // Provision for when the last page has been reached, but not all rows have been fetched
+    // This can happen for slow networks or when the fetchThreshold set is too low
+    const lastPage = rows.length / pageSize;
+    if (newPage === lastPage && rows.length < rowCount) {
+      // show table spinner
+      setIsLoading(true);
+      // disable the next page button
+      const nextPageButton = document.querySelector(
+        '[aria-label="Go to next page"]'
+      ) as HTMLButtonElement;
+      nextPageButton.classList.add("Mui-disabled");
+    }
+
     setPage(newPage);
   };
 
