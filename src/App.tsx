@@ -10,6 +10,7 @@ function App() {
 
   const [start, setStart] = useState(0);
   const [rows, setRows] = useState<any[]>([]);
+  const [rowCount, setRowCount] = useState<number>(0);
   const [columns, setColumns] = useState<GridColumns>([]);
   const [exceededTransferLimit, setExceededTransferLimit] = useState(false);
 
@@ -17,6 +18,26 @@ function App() {
   const [error, setError] = useState<Error | null>(null);
   const [snackbarMsg, setSnackbarMsg] = useState("");
   const snackbarOpen = snackbarMsg !== "";
+
+  // Effect to retrieve total number of rows
+  useEffect(() => {
+    query
+      .executeForCount(
+        "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Counties_education_smart_mapping/FeatureServer/0",
+        {
+          where: "1=1",
+        }
+      )
+      .then((count) => {
+        setRowCount((prevRowCount) =>
+          count !== undefined ? count : prevRowCount
+        );
+      })
+      .catch((err) => {
+        const newError = new Error(err.message);
+        setError(newError);
+      });
+  }, []); // assumes that row count does not change frequently; modify according to needs
 
   useEffect(() => {
     setIsLoading(true);
@@ -89,6 +110,7 @@ function App() {
         rows={rows}
         columns={columns}
         page={page}
+        rowCount={rowCount}
         onPageChange={handlePageChange}
         pageSize={pageSize}
         onPageSizeChange={handlePageSizeChange}
